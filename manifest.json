@@ -1,9 +1,11 @@
 {
   "manifest_version": 3,
-  "name": "Practice Popup",
-  "version": "1.0",
-  "description": "Just practicing a popup extension",
+  "name": "Mini Calendar Assistant (Practice Step 1)",
+  "version": "0.1.0",
+  "description": "Chatbox-style popup to practice UI & storage (no Google API yet).",
+  "permissions": ["storage"],
   "action": {
-    "default_popup": "testOne.html"
+    "default_popup": "testOne.html",
+    "default_title": "Mini Cal"
   }
 }

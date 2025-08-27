@@ -1,15 +1,56 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Practice Popup</title>
-  <link rel="stylesheet" href="popup.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mini Calendar Assistant — Practice</title>
+  <link rel="stylesheet" href="popup.css" />
 </head>
 <body>
-  <h1>Zeno</h1>
-  
-    <input type="text" id="lname" name="lname"><br><br>
-    <button id="clickMe">Click Me</button>
-    <script src="StudyJS.js"></script>
+  <div class="card">
+    <header class="header" role="banner">
+      <div class="dot" aria-hidden="true"></div>
+      <h1>Mini Calendar Assistant</h1>
+      <span class="badge" aria-label="Build phase">Practice</span>
+    </header>
 
+    <section class="composer" aria-labelledby="compose-title">
+      <h2 id="compose-title" class="sr-only">Compose local event</h2>
+
+      <label class="label" for="title">Title <span aria-hidden="true">*</span></label>
+      <input id="title" class="input" placeholder="e.g., Meet John" autocomplete="off" required />
+
+      <div class="row">
+        <div class="col">
+          <label class="label" for="date">Date</label>
+          <input id="date" type="date" class="input" />
+        </div>
+        <div class="col">
+          <label class="label" for="start">Start</label>
+          <input id="start" type="time" class="input" />
+        </div>
+        <div class="col">
+          <label class="label" for="end">End</label>
+          <input id="end" type="time" class="input" />
+        </div>
+      </div>
+
+      <button id="addBtn" class="btn" type="button" aria-label="Add local event">Add (local)</button>
+    </section>
+
+    <section class="list" aria-labelledby="saved-title">
+      <div class="list-header">
+        <h2 id="saved-title">Saved (local)</h2>
+        <button id="clearAll" class="btn-secondary" type="button">Clear all</button>
+      </div>
+      <ul id="events" class="events" aria-live="polite"></ul>
+    </section>
+
+    <footer class="footer" role="contentinfo">
+      No Google login yet — this is just practice using chrome.storage.
+    </footer>
+  </div>
+
+  <script src="StudyJS.js" defer></script>
 </body>
 </html>
