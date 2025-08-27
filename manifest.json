@@ -1,9 +1,19 @@
 {
   "manifest_version": 3,
-  "name": "Mini Calendar Assistant (Practice Step 1)",
-  "version": "0.1.0",
-  "description": "Chatbox-style popup to practice UI & storage (no Google API yet).",
-  "permissions": ["storage"],
+  "name": "Mini Calendar Assistant",
+  "version": "0.2.0",
+  "description": "Chatbox popup with Google Sign-In (Phase 2).",
+  "permissions": ["identity", "storage"],
+  "oauth2": {
+    "client_id": "YOUR_CLIENT_ID.apps.googleusercontent.com",
+    "scopes": [
+      "https://www.googleapis.com/auth/calendar.events.readonly",
+      "https://www.googleapis.com/auth/calendar.events"
+    ]
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
   "action": {
     "default_popup": "testOne.html",
     "default_title": "Mini Cal"

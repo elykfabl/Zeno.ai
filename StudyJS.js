@@ -191,3 +191,19 @@ async function clearAll() {
   byId('clearAll').addEventListener('click', clearAll);
   render(await loadEvents());
 })();
+
+// --- Google Sign-In ---
+const loginBtn = document.getElementById('loginBtn');
+const statusEl = document.getElementById('status');
+
+loginBtn.addEventListener('click', () => {
+  chrome.runtime.sendMessage({ action: 'login' }, response => {
+    if (!response || !response.success) {
+      alert('Login failed. See console for details.');
+      return;
+    }
+    statusEl.textContent = 'Signed in ✅';
+    statusEl.style.color = '#22c55e';
+    console.log('Access Token:', response.token);
+  });
+});

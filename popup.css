@@ -31,3 +31,11 @@ body{margin:0;padding:12px;width:340px;background:linear-gradient(160deg,var(--b
 .events::-webkit-scrollbar-thumb{background:#1f2937;border-radius:8px}
 /* a11y utility */
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+
+/* overflow fixes */
+.row{flex-wrap:wrap}
+.col{min-width:0}
+.input{min-width:0}
+.item{min-width:0}
+.item-time{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.item-title{overflow-wrap:anywhere}
