@@ -3,31 +3,26 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Mini Calendar — Chatbox Style</title>
+  <title>Mini Calendar Chat</title>
   <link rel="stylesheet" href="popup.css" />
 </head>
 <body>
   <div class="chatbox">
     <!-- Header -->
     <header class="chat-header">
-      <div class="chat-avatar">📅</div>
-      <div class="chat-title">Mini Calendar</div>
-      <button class="chat-close" aria-label="Close">✕</button>
+      <div class="chat-title">Mini Calendar Assistant</div>
     </header>
 
-    <!-- Messages area -->
-    <div class="chat-messages" id="events" aria-live="polite">
-      <!-- Events will be listed here -->
+    <!-- Chat messages -->
+    <div class="chat-messages" id="chatLog">
+      <div class="chat-message bot">👋 Hi! Type your event, e.g. "Meeting with John tomorrow 3pm".</div>
     </div>
 
-    <!-- Composer -->
-    <div class="chat-composer">
-      <input id="title" type="text" placeholder="Event title…" />
-      <input id="date" type="date" />
-      <input id="start" type="time" />
-      <input id="end" type="time" />
-      <button id="addBtn">➤</button>
-    </div>
+    <!-- Input composer -->
+    <form id="chatForm" class="chat-composer">
+      <input id="chatInput" type="text" placeholder="Type your event..." autocomplete="off" />
+      <button type="submit">➤</button>
+    </form>
   </div>
 
   <script src="StudyJS.js" defer></script>
