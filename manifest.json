@@ -4,6 +4,9 @@
   "version": "0.2.0",
   "description": "Chatbox popup with Google Sign-In (Phase 2).",
   "permissions": ["identity", "storage"],
+  "host_permissions": [
+    "https://www.googleapis.com/*"
+  ],
   "oauth2": {
     "client_id": "304220756028-rp06c4n1hptehivid9vr1hdgtq994bk1.apps.googleusercontent.com",
     "scopes": [

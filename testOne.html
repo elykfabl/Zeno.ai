@@ -51,6 +51,13 @@
       <ul id="events" class="events" aria-live="polite"></ul>
     </section>
 
+    <section class="composer" aria-labelledby="chat-title">
+      <h2 id="chat-title" class="sr-only">Chat assistant</h2>
+      <div id="chatLog" class="events" style="max-height:140px"></div>
+      <input id="chatInput" class="input" placeholder="e.g., Set calendar for 4:00 AM tomorrow" />
+      <button id="chatSend" class="btn" type="button">Send</button>
+    </section>
+
     <footer class="footer" role="contentinfo">
       No Google login yet — this is just practice using chrome.storage.
     </footer>
