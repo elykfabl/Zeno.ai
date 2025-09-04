@@ -81,6 +81,19 @@ function parseNaturalLanguageToEvent(input) {
   return { title, startISO, endISO };
 }
 
+// ---- Minimal local storage for test-mode events ----
+const LOCAL_EVENTS_KEY = 'miniCal.localEvents';
+function loadLocalEvents() {
+  return new Promise(resolve => {
+    chrome.storage.local.get([LOCAL_EVENTS_KEY], res => resolve(res[LOCAL_EVENTS_KEY] || []));
+  });
+}
+function saveLocalEvents(events) {
+  return new Promise(resolve => {
+    chrome.storage.local.set({ [LOCAL_EVENTS_KEY]: events }, resolve);
+  });
+}
+
 function appendChat(role, content) {
   // Render ChatGPT-like bubbles
   const log = byId('chatLog');
@@ -107,7 +120,7 @@ function setTyping(visible) {
 
 byId('chatSend').addEventListener('click', async () => {
   // 1) Read user message  2) Parse it  3) Ask for title if missing
-  // 4) Request background to create event  5) Show result
+  // 4) In test-mode, collect missing fields and save locally  5) Show result
   const inputEl = byId('chatInput');
   const text = inputEl.value.trim();
   if (!text) return;
@@ -116,32 +129,7 @@ byId('chatSend').addEventListener('click', async () => {
   setBusy(true);
   setTyping(true);
   try {
-    const parsed = parseNaturalLanguageToEvent(text);
-    if (parsed.error) {
-      appendChat('Assistant', parsed.error);
-      return;
-    }
-
-    // Ask for title if generic
-    if (!parsed.title || parsed.title === 'New event') {
-      appendChat('Assistant', 'What should the title be?');
-      return;
-    }
-
-    // Create via background
-    await new Promise((resolve) => chrome.runtime.sendMessage({
-      action: 'createCalendarEvent',
-      payload: parsed
-    }, (resp) => {
-      if (!resp || !resp.success) {
-        appendChat('Assistant', 'Failed to create event. Please sign in and try again.');
-        resolve();
-        return;
-      }
-      const when = `${fmtDate(parsed.startISO)} → ${new Date(parsed.endISO).toLocaleTimeString([], { timeStyle: 'short' })}`;
-      appendChat('Assistant', `Created event: "${parsed.title}" at ${when}`);
-      resolve();
-    }));
+    await handleChatTurn(text);
   } finally {
     setBusy(false);
     setTyping(false);
@@ -157,27 +145,127 @@ byId('chatInput').addEventListener('keydown', (e) => {
   }
 });
 
-// Fetch and display upcoming events in the chat as a system message
-byId('showEvents').addEventListener('click', () => {
-  setBusy(true);
-  setTyping(true);
-  chrome.runtime.sendMessage({ action: 'listCalendarEvents', payload: { maxResults: 10 } }, (resp) => {
-    setBusy(false);
-    setTyping(false);
-    if (!resp || !resp.success) {
-      appendChat('Assistant', 'Could not retrieve events. Please sign in and try again.');
-      return;
-    }
-    if (!resp.events.length) {
-      appendChat('Assistant', 'No upcoming events found.');
-      return;
-    }
-    const lines = resp.events.map(ev => {
-      const start = ev.start && (ev.start.dateTime || ev.start.date);
-      const end = ev.end && (ev.end.dateTime || ev.end.date);
-      const when = start ? fmtDate(start) : '—';
-      return `• ${ev.summary || 'Untitled'} — ${when}`;
-    });
-    appendChat('Assistant', `Upcoming events:\n${lines.join('\n')}`);
-  });
+// Fetch and display locally saved test events instead of Calendar API (concept test)
+byId('showEvents').addEventListener('click', async () => {
+  // Toggle/open upcoming panel and render local events
+  const panel = byId('upcomingPanel');
+  panel.classList.remove('hidden');
+  await renderUpcomingList();
 });
+
+byId('closeUpcoming').addEventListener('click', () => {
+  const panel = byId('upcomingPanel');
+  panel.classList.add('hidden');
+});
+
+async function renderUpcomingList() {
+  const list = byId('upcomingList');
+  list.innerHTML = '';
+  const events = await loadLocalEvents();
+  if (!events.length) {
+    const li = document.createElement('li');
+    li.className = 'item';
+    li.textContent = 'No locally saved test events yet.';
+    list.appendChild(li);
+    return;
+  }
+  const sorted = [...events].sort((a,b) => {
+    const ta = a.start ? new Date(a.start).getTime() : Number.POSITIVE_INFINITY;
+    const tb = b.start ? new Date(b.start).getTime() : Number.POSITIVE_INFINITY;
+    return ta - tb;
+  });
+  for (let i = 0; i < sorted.length; i++) {
+    const ev = sorted[i];
+    const li = document.createElement('li');
+    li.className = 'item';
+    const timeDiv = document.createElement('div');
+    timeDiv.className = 'item-time';
+    timeDiv.textContent = ev.start ? fmtDate(ev.start) : '—';
+    const bodyDiv = document.createElement('div');
+    const titleDiv = document.createElement('div');
+    titleDiv.className = 'item-title';
+    titleDiv.textContent = ev.title || 'Untitled';
+    bodyDiv.appendChild(titleDiv);
+    li.appendChild(timeDiv);
+    li.appendChild(bodyDiv);
+    list.appendChild(li);
+  }
+}
+
+// ---- Conversational state machine (local-only test) ----
+let convo = null; // { step: string, draft: {title,startISO,endISO,attendees[]} }
+function resetConvo() { convo = null; }
+
+function startConvoFromText(text) {
+  const parsed = parseNaturalLanguageToEvent(text);
+  if (parsed.error) { appendChat('Assistant', parsed.error); return null; }
+  const draft = { title: parsed.title, startISO: parsed.startISO, endISO: parsed.endISO, attendees: [] };
+  if (!draft.title || draft.title === 'New event') return { step: 'askTitle', draft };
+  if (!draft.startISO) return { step: 'askWhen', draft };
+  return { step: 'askAttendees', draft };
+}
+
+function parseEmails(text) {
+  const emails = (text.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi) || []).map(s => s.toLowerCase());
+  return Array.from(new Set(emails));
+}
+
+async function handleChatTurn(text) {
+  if (convo) {
+    const step = convo.step;
+    const d = convo.draft;
+    if (step === 'askTitle') {
+      d.title = text.trim() || d.title || 'Untitled';
+      convo.step = d.startISO ? 'askAttendees' : 'askWhen';
+      if (convo.step === 'askWhen') appendChat('Assistant', 'When is it? (e.g., “tomorrow 4pm”)');
+      else appendChat('Assistant', 'Anyone to invite? (paste emails or say “no”)');
+      return;
+    }
+    if (step === 'askWhen') {
+      const r = parseNaturalLanguageToEvent(text);
+      if (!r.startISO) { appendChat('Assistant', 'I could not parse a time. Try “tomorrow 4pm”.'); return; }
+      d.startISO = r.startISO; d.endISO = r.endISO;
+      convo.step = 'askAttendees';
+      appendChat('Assistant', 'Anyone to invite? (paste emails or say “no”)');
+      return;
+    }
+    if (step === 'askAttendees') {
+      const emails = /^(no|none|skip)$/i.test(text.trim()) ? [] : parseEmails(text);
+      d.attendees = emails;
+      convo.step = 'askConfirm';
+      const when = `${fmtDate(d.startISO)} → ${new Date(d.endISO).toLocaleTimeString([], { timeStyle: 'short' })}`;
+      appendChat('Assistant', `Confirm event:\nTitle: ${d.title}\nWhen: ${when}\nAttendees: ${emails.length ? emails.join(', ') : '—'}\nType "confirm" to save or "edit" to change.`);
+      return;
+    }
+    if (step === 'askConfirm') {
+      const t = text.trim().toLowerCase();
+      if (t === 'confirm' || t === 'yes' || t === 'y') {
+        const events = await loadLocalEvents();
+        events.push({ title: d.title, start: d.startISO, end: d.endISO, attendees: d.attendees, createdAt: Date.now() });
+        await saveLocalEvents(events);
+        const when = `${fmtDate(d.startISO)} → ${new Date(d.endISO).toLocaleTimeString([], { timeStyle: 'short' })}`;
+        appendChat('Assistant', `Saved locally: "${d.title}" at ${when}. (Concept test)`);
+        resetConvo();
+        return;
+      }
+      if (t === 'edit' || t === 'change') { convo.step = 'askWhatEdit'; appendChat('Assistant', 'What would you like to change? (say: title / time / attendees)'); return; }
+      appendChat('Assistant', 'Please type "confirm" to save or "edit" to change.');
+      return;
+    }
+    if (step === 'askWhatEdit') {
+      const k = text.trim().toLowerCase();
+      if (k.includes('title')) { convo.step = 'askTitle'; appendChat('Assistant', 'What is the new title?'); return; }
+      if (k.includes('time') || k.includes('when')) { convo.step = 'askWhen'; appendChat('Assistant', 'What is the new time? (e.g., “tomorrow 4pm”)'); return; }
+      if (k.includes('invite') || k.includes('attendee')) { convo.step = 'askAttendees'; appendChat('Assistant', 'Paste emails to invite, or say “no”.'); return; }
+      appendChat('Assistant', 'Please say: title / time / attendees.');
+      return;
+    }
+  }
+
+  // New conversation: seed from initial text
+  convo = startConvoFromText(text);
+  if (!convo) return;
+  if (convo.step === 'askTitle') { appendChat('Assistant', 'What should the title be?'); return; }
+  if (convo.step === 'askWhen') { appendChat('Assistant', 'When is it? (e.g., “tomorrow 4pm”)'); return; }
+  if (convo.step === 'askAttendees') { appendChat('Assistant', 'Anyone to invite? (paste emails or say “no”)'); return; }
+}
