@@ -21,6 +21,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 
   if (request.action === 'createCalendarEvent') {
+    // Creates an event on the user's primary Google Calendar.
     // request.payload should include: title, startISO, endISO, attendees[] (optional), description (optional)
     const { title, startISO, endISO, attendees = [], description = '' } = request.payload || {};
     if (!title || !startISO) {
@@ -28,6 +29,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       return true;
     }
 
+    // Ensure we have an OAuth token for Calendar API
     chrome.identity.getAuthToken({ interactive: true }, token => {
       if (chrome.runtime.lastError || !token) {
         console.error('Token error:', chrome.runtime.lastError);
@@ -35,6 +37,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         return;
       }
 
+      // Construct Calendar API event resource
       const body = {
         summary: title,
         description,
@@ -45,6 +48,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
           .map(email => ({ email }))
       };
 
+      // Call Calendar API: insert event on primary calendar
       fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', {
         method: 'POST',
         headers: {
@@ -53,7 +57,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         },
         body: JSON.stringify(body)
       })
-      .then(r => r.json().then(j => ({ ok: r.ok, status: r.status, json: j })))
+      .then(r => r.json().then(j => ({ ok: r.ok, status: r.status, json: j }))) // unwrap JSON with status
       .then(({ ok, status, json }) => {
         if (!ok) {
           console.error('Calendar API error:', status, json);
