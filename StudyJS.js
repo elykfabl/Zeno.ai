@@ -82,6 +82,11 @@ function parseNaturalLanguageToEvent(input) {
 }
 
 // ---- Minimal local storage for test-mode events ----
+// Purpose: While we don't persist to Google Calendar yet, we keep a local
+// list of "events" so you can test the full chat flow end-to-end. This uses
+// chrome.storage.local inside the extension. If someone opens testOne.html
+// directly in a normal tab (no extension context), we transparently fall back
+// to window.localStorage so it still works for demos.
 const LOCAL_EVENTS_KEY = 'miniCal.localEvents';
 function loadLocalEvents() {
   return new Promise(resolve => {
@@ -165,6 +170,7 @@ byId('chatInput').addEventListener('keydown', (e) => {
 });
 
 // Fetch and display locally saved test events instead of Calendar API (concept test)
+// Open the dedicated Upcoming panel and render the local list
 byId('showEvents').addEventListener('click', async () => {
   // Toggle/open upcoming panel and render local events
   const panel = byId('upcomingPanel');
@@ -177,6 +183,12 @@ byId('closeUpcoming').addEventListener('click', () => {
   panel.classList.add('hidden');
 });
 
+/**
+ * renderUpcomingList
+ * Renders the locally saved test events (sorted by start) into the
+ * dedicated Upcoming panel. This mirrors a real "Upcoming" page but
+ * stays fully local for concept testing.
+ */
 async function renderUpcomingList() {
   const list = byId('upcomingList');
   list.innerHTML = '';
@@ -212,6 +224,12 @@ async function renderUpcomingList() {
 }
 
 // ---- Conversational state machine (local-only test) ----
+// How it works (high-level):
+// 1) We try to parse the initial user message for time/title.
+// 2) If something is missing, we set a "step" and ask a follow-up.
+// 3) Each subsequent message is routed based on the current step until we
+//    have all fields (title, when, optional attendees).
+// 4) We show a confirmation summary and save locally on confirmation.
 let convo = null; // { step: string, draft: {title,startISO,endISO,attendees[]} }
 function resetConvo() { convo = null; }
 
