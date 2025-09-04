@@ -2,7 +2,15 @@
 
 /**
  * Background script — Phase 2
- * Handles Google OAuth via chrome.identity.
+ * What this does:
+ * - Handles Google OAuth via chrome.identity to obtain an access token.
+ * - Receives chat-driven requests from the popup to create calendar events.
+ * - Calls Google Calendar API (v3) to insert events into the user's primary calendar.
+ *
+ * How to extend this:
+ * - Add more message actions (e.g., listUpcomingEvents, updateEvent, cancelEvent).
+ * - Include additional event fields (location, reminders, conferenceData) in the body.
+ * - Handle attendee emails, time zones, or recurrence rules.
  */
 
 // Listen for requests from popup

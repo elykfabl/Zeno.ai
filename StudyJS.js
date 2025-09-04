@@ -210,6 +210,18 @@ loginBtn.addEventListener('click', () => {
 
 // --- Simple LLM parsing stub and chat flow ---
 /**
+ * Overview
+ * - The popup provides a chat box where users type scheduling requests.
+ * - We parse the text locally (for now) to extract a start time, and a simple title.
+ * - Then we message the background to create the Calendar event with the user's OAuth token.
+ *
+ * Moving forward
+ * - Replace parseNaturalLanguageToEvent with a real LLM call (send the text to your model,
+ *   return structured fields: title, startISO, endISO, attendees[], description, etc.).
+ * - Add a small dialog/turn-taking logic to ask clarifying questions (e.g., title, attendees).
+ * - Maintain conversation state in chrome.storage.local so follow-up messages can reference context.
+ */
+/**
  * parseNaturalLanguageToEvent attempts to extract { title, startISO, endISO }
  * from a natural-language instruction like "Set calendar for 4:00 AM tomorrow".
  * This is a lightweight deterministic stub; later we can swap in a real LLM call.
@@ -256,6 +268,7 @@ function parseNaturalLanguageToEvent(input) {
 }
 
 function appendChat(role, content) {
+  // Creates a simple chat bubble using existing list styles
   const log = byId('chatLog');
   const div = document.createElement('div');
   div.className = 'item';
@@ -270,6 +283,8 @@ function setBusy(disabled) {
 }
 
 byId('chatSend').addEventListener('click', async () => {
+  // 1) Read user message  2) Parse it  3) Ask for title if missing
+  // 4) Request background to create event  5) Show result
   const inputEl = byId('chatInput');
   const text = inputEl.value.trim();
   if (!text) return;
