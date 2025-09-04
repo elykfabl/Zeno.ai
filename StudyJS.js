@@ -85,12 +85,31 @@ function parseNaturalLanguageToEvent(input) {
 const LOCAL_EVENTS_KEY = 'miniCal.localEvents';
 function loadLocalEvents() {
   return new Promise(resolve => {
-    chrome.storage.local.get([LOCAL_EVENTS_KEY], res => resolve(res[LOCAL_EVENTS_KEY] || []));
+    try {
+      if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+        chrome.storage.local.get([LOCAL_EVENTS_KEY], res => resolve(res[LOCAL_EVENTS_KEY] || []));
+      } else {
+        const raw = localStorage.getItem(LOCAL_EVENTS_KEY);
+        resolve(raw ? JSON.parse(raw) : []);
+      }
+    } catch (_) {
+      resolve([]);
+    }
   });
 }
 function saveLocalEvents(events) {
   return new Promise(resolve => {
-    chrome.storage.local.set({ [LOCAL_EVENTS_KEY]: events }, resolve);
+    try {
+      if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+        chrome.storage.local.set({ [LOCAL_EVENTS_KEY]: events }, resolve);
+      } else {
+        localStorage.setItem(LOCAL_EVENTS_KEY, JSON.stringify(events));
+        resolve();
+      }
+    } catch (_) {
+      // best effort
+      resolve();
+    }
   });
 }
 
