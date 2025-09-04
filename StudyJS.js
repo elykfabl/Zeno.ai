@@ -156,3 +156,28 @@ byId('chatInput').addEventListener('keydown', (e) => {
     byId('chatSend').click();
   }
 });
+
+// Fetch and display upcoming events in the chat as a system message
+byId('showEvents').addEventListener('click', () => {
+  setBusy(true);
+  setTyping(true);
+  chrome.runtime.sendMessage({ action: 'listCalendarEvents', payload: { maxResults: 10 } }, (resp) => {
+    setBusy(false);
+    setTyping(false);
+    if (!resp || !resp.success) {
+      appendChat('Assistant', 'Could not retrieve events. Please sign in and try again.');
+      return;
+    }
+    if (!resp.events.length) {
+      appendChat('Assistant', 'No upcoming events found.');
+      return;
+    }
+    const lines = resp.events.map(ev => {
+      const start = ev.start && (ev.start.dateTime || ev.start.date);
+      const end = ev.end && (ev.end.dateTime || ev.end.date);
+      const when = start ? fmtDate(start) : '—';
+      return `• ${ev.summary || 'Untitled'} — ${when}`;
+    });
+    appendChat('Assistant', `Upcoming events:\n${lines.join('\n')}`);
+  });
+});

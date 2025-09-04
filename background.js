@@ -81,4 +81,44 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     });
     return true; // async
   }
+
+  if (request.action === 'listCalendarEvents') {
+    // Lists upcoming events from the user's primary calendar.
+    // Optional request.payload: { maxResults?: number, timeMin?: string }
+    const { maxResults = 10, timeMin } = request.payload || {};
+
+    const startTime = timeMin || new Date().toISOString();
+
+    chrome.identity.getAuthToken({ interactive: true }, token => {
+      if (chrome.runtime.lastError || !token) {
+        console.error('Token error:', chrome.runtime.lastError);
+        sendResponse({ success: false, error: chrome.runtime.lastError });
+        return;
+      }
+
+      const url = new URL('https://www.googleapis.com/calendar/v3/calendars/primary/events');
+      url.searchParams.set('singleEvents', 'true');
+      url.searchParams.set('orderBy', 'startTime');
+      url.searchParams.set('timeMin', startTime);
+      url.searchParams.set('maxResults', String(maxResults));
+
+      fetch(url.toString(), {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+      .then(r => r.json().then(j => ({ ok: r.ok, status: r.status, json: j })))
+      .then(({ ok, status, json }) => {
+        if (!ok) {
+          console.error('Calendar list error:', status, json);
+          sendResponse({ success: false, status, error: json });
+          return;
+        }
+        sendResponse({ success: true, events: Array.isArray(json.items) ? json.items : [] });
+      })
+      .catch(err => {
+        console.error('Network error:', err);
+        sendResponse({ success: false, error: String(err) });
+      });
+    });
+    return true; // async
+  }
 });
