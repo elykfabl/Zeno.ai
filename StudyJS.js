@@ -268,18 +268,27 @@ function parseNaturalLanguageToEvent(input) {
 }
 
 function appendChat(role, content) {
-  // Creates a simple chat bubble using existing list styles
+  // Render ChatGPT-like bubbles
   const log = byId('chatLog');
-  const div = document.createElement('div');
-  div.className = 'item';
-  div.innerHTML = `<div class="item-title">${escapeHtml(role)}</div><div style="margin-left:8px;">${escapeHtml(content)}</div>`;
-  log.appendChild(div);
+  const row = document.createElement('div');
+  row.className = `msg ${role.toLowerCase() === 'you' ? 'user' : 'assistant'}`;
+  const bubble = document.createElement('div');
+  bubble.className = 'bubble';
+  bubble.textContent = content;
+  row.appendChild(bubble);
+  log.appendChild(row);
   log.scrollTop = log.scrollHeight;
 }
 
 function setBusy(disabled) {
   byId('chatSend').disabled = disabled;
   byId('chatInput').disabled = disabled;
+}
+
+function setTyping(visible) {
+  const t = byId('typing');
+  if (!t) return;
+  t.classList.toggle('hidden', !visible);
 }
 
 byId('chatSend').addEventListener('click', async () => {
@@ -291,6 +300,7 @@ byId('chatSend').addEventListener('click', async () => {
 
   appendChat('You', text);
   setBusy(true);
+  setTyping(true);
   try {
     const parsed = parseNaturalLanguageToEvent(text);
     if (parsed.error) {
@@ -320,6 +330,15 @@ byId('chatSend').addEventListener('click', async () => {
     }));
   } finally {
     setBusy(false);
+    setTyping(false);
     inputEl.value = '';
+  }
+});
+
+// Enter to send, Shift+Enter for newline
+byId('chatInput').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    byId('chatSend').click();
   }
 });

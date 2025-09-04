@@ -55,12 +55,19 @@
       <ul id="events" class="events" aria-live="polite"></ul>
     </section>
 
-    <!-- Chat assistant: accepts natural language and creates calendar events via background.js -->
-    <section class="composer" aria-labelledby="chat-title">
+    <!-- Chat assistant: ChatGPT-like layout -->
+    <section class="chat" aria-labelledby="chat-title">
       <h2 id="chat-title" class="sr-only">Chat assistant</h2>
-      <div id="chatLog" class="events" style="max-height:140px"></div>
-      <input id="chatInput" class="input" placeholder="e.g., Set calendar for 4:00 AM tomorrow" />
-      <button id="chatSend" class="btn" type="button">Send</button>
+      <div id="chatLog" class="chat-log" aria-live="polite"></div>
+      <div id="typing" class="typing hidden" aria-live="polite">
+        <span class="dot-anim"></span>
+        <span class="dot-anim"></span>
+        <span class="dot-anim"></span>
+      </div>
+      <div class="chat-input">
+        <textarea id="chatInput" class="chat-textarea" rows="2" placeholder="Message Mini Calendar… (Shift+Enter for newline)"></textarea>
+        <button id="chatSend" class="chat-send" type="button" aria-label="Send">Send</button>
+      </div>
     </section>
 
     <footer class="footer" role="contentinfo">
