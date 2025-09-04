@@ -219,10 +219,44 @@ async function renderUpcomingList() {
     titleDiv.className = 'item-title';
     titleDiv.textContent = ev.title || 'Untitled';
     bodyDiv.appendChild(titleDiv);
+    const actions = document.createElement('div');
+    actions.className = 'item-actions';
+    const delBtn = document.createElement('button');
+    delBtn.className = 'icon-btn';
+    delBtn.dataset.action = 'delete-local';
+    delBtn.dataset.index = String(i);
+    delBtn.type = 'button';
+    delBtn.textContent = 'Delete';
+    actions.appendChild(delBtn);
     li.appendChild(timeDiv);
     li.appendChild(bodyDiv);
+    li.appendChild(actions);
     list.appendChild(li);
   }
+}
+
+// Handle delete clicks within the Upcoming list (event delegation)
+byId('upcomingList').addEventListener('click', async (e) => {
+  const btn = /** @type {HTMLElement|null} */(e.target && e.target.closest('button'));
+  if (!btn) return;
+  if (btn.dataset.action !== 'delete-local') return;
+  const idx = Number(btn.dataset.index);
+  if (!Number.isInteger(idx)) return;
+  const events = await loadLocalEvents();
+  if (idx < 0 || idx >= events.length) return;
+  events.splice(idx, 1);
+  await saveLocalEvents(events);
+  await renderUpcomingList();
+});
+
+// Clear all locally saved test events
+const clearBtn = document.getElementById('clearLocal');
+if (clearBtn) {
+  clearBtn.addEventListener('click', async () => {
+    if (!confirm('Clear all local test events?')) return;
+    await saveLocalEvents([]);
+    await renderUpcomingList();
+  });
 }
 
 // ---- Conversational state machine (local-only test) ----

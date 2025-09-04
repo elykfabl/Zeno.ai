@@ -14,7 +14,7 @@
          This is a starter flow; you can replace the parser with a real LLM later. -->
     <header class="header" role="banner">
       <div class="dot" aria-hidden="true"></div>
-      <h1>MiniCal Chat</h1>
+      <h1>Zeno</h1>
       <span class="badge" aria-label="Build phase">Preview</span>
       <button id="showEvents" class="btn-secondary" type="button" style="margin-left:8px">Upcoming</button>
     </header>
@@ -38,8 +38,9 @@
 
     <!-- Upcoming panel: separate list view (local test events) -->
     <section id="upcomingPanel" class="upcoming hidden" aria-labelledby="upcoming-title">
-      <div class="list-header">
+      <div class="list-header" style="gap:8px">
         <h2 id="upcoming-title">Upcoming (local)</h2>
+        <button id="clearLocal" class="btn-secondary" type="button">Clear all</button>
         <button id="closeUpcoming" class="btn-secondary" type="button">Close</button>
       </div>
       <ul id="upcomingList" class="events" aria-live="polite"></ul>
