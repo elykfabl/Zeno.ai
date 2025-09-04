@@ -43,7 +43,7 @@ body{margin:0;padding:12px;width:340px;background:linear-gradient(160deg,var(--b
 
 /* ChatGPT-like chat styles */
 .chat{padding:12px 14px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:8px}
-.chat-log{display:flex;flex-direction:column;gap:8px;max-height:480px;overflow:auto}
+.chat-log{display:flex;flex-direction:column;gap:8px;max-height:640px;overflow:auto}
 .msg{display:flex;gap:8px}
 .msg .bubble{padding:10px 12px;border-radius:12px;max-width:85%;line-height:1.35}
 .msg.user{justify-content:flex-end}
