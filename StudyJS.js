@@ -12,12 +12,14 @@ function byId(id) { return /** @type {HTMLElement} */(document.getElementById(id
 /** @param {string|number|Date} d */
 function fmtDate(d) {
   const dt = new Date(d);
-  if (Number.isNaN(dt.getTime())) return '—';
+  if (!(dt instanceof Date) || Number.isNaN(dt.getTime())) return '—';
   return dt.toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' });
 }
 /** simple HTML escape (bugfix: removed stray ';' from char class) */
+const HTML_ESCAPE_MAP = { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' };
+const HTML_ESCAPE_RE = /[&<>"]/g;
 function escapeHtml(str) {
-  return String(str).replace(/[&<>"]/g, s => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[s]));
+  return String(str).replace(HTML_ESCAPE_RE, s => HTML_ESCAPE_MAP[s]);
 }
 
 // No local storage list, composer, or login UI. OAuth will occur implicitly from background on API call.
@@ -256,8 +258,8 @@ async function handleChatTurn(text) {
       convo.step = d.startISO ? 'askAttendees' : 'askWhen';
       if (convo.step === 'askWhen') appendChat('Assistant', 'When is it? (e.g., “tomorrow 4pm”)');
       else appendChat('Assistant', 'Anyone to invite? (paste emails or say “no”)');
-      return;
-    }
+    return;
+  }
     if (step === 'askWhen') {
       const r = parseNaturalLanguageToEvent(text);
       if (!r.startISO) { appendChat('Assistant', 'I could not parse a time. Try “tomorrow 4pm”.'); return; }

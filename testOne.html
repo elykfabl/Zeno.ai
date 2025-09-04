@@ -7,14 +7,14 @@
   <link rel="stylesheet" href="popup.css" />
 </head>
 <body>
-  <div class="card">
+  <div class="card" style="padding:12px 12px 0">
     <!-- Usage: Click "Sign in with Google" first. Then, in the Chat assistant below,
          type natural-language instructions like: "Set calendar for 4:00 AM tomorrow about Daily standup".
          The assistant will parse the time and create a 30-min event via background.js.
          This is a starter flow; you can replace the parser with a real LLM later. -->
     <header class="header" role="banner">
       <div class="dot" aria-hidden="true"></div>
-      <h1>Mini Calendar Chat</h1>
+      <h1>MiniCal Chat</h1>
       <span class="badge" aria-label="Build phase">Preview</span>
       <button id="showEvents" class="btn-secondary" type="button" style="margin-left:8px">Upcoming</button>
     </header>

@@ -13,6 +13,27 @@
  * - Handle attendee emails, time zones, or recurrence rules.
  */
 
+// Small helpers for reliability and clarity
+/** @returns {Promise<string>} */
+function getAuthTokenInteractive() {
+  return new Promise((resolve, reject) => {
+    chrome.identity.getAuthToken({ interactive: true }, token => {
+      if (chrome.runtime.lastError || !token) {
+        reject(chrome.runtime.lastError || new Error('No token'));
+        return;
+      }
+      resolve(token);
+    });
+  });
+}
+
+/** @returns {Promise<{ok:boolean,status:number,json:any}>} */
+async function fetchJson(url, init) {
+  const resp = await fetch(url, init);
+  const json = await resp.json().catch(() => ({}));
+  return { ok: resp.ok, status: resp.status, json };
+}
+
 // Listen for requests from popup
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'login') {
@@ -37,48 +58,32 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       return true;
     }
 
-    // Ensure we have an OAuth token for Calendar API
-    chrome.identity.getAuthToken({ interactive: true }, token => {
-      if (chrome.runtime.lastError || !token) {
-        console.error('Token error:', chrome.runtime.lastError);
-        sendResponse({ success: false, error: chrome.runtime.lastError });
-        return;
-      }
-
-      // Construct Calendar API event resource
-      const body = {
-        summary: title,
-        description,
-        start: { dateTime: startISO },
-        end: { dateTime: endISO || startISO },
-        attendees: attendees
-          .filter(Boolean)
-          .map(email => ({ email }))
-      };
-
-      // Call Calendar API: insert event on primary calendar
-      fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(body)
-      })
-      .then(r => r.json().then(j => ({ ok: r.ok, status: r.status, json: j }))) // unwrap JSON with status
-      .then(({ ok, status, json }) => {
+    (async () => {
+      try {
+        const token = await getAuthTokenInteractive();
+        const body = {
+          summary: title,
+          description,
+          start: { dateTime: startISO },
+          end: { dateTime: endISO || startISO },
+          attendees: attendees.filter(Boolean).map(email => ({ email }))
+        };
+        const { ok, status, json } = await fetchJson('https://www.googleapis.com/calendar/v3/calendars/primary/events', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
         if (!ok) {
           console.error('Calendar API error:', status, json);
           sendResponse({ success: false, status, error: json });
           return;
         }
         sendResponse({ success: true, event: json });
-      })
-      .catch(err => {
-        console.error('Network error:', err);
-        sendResponse({ success: false, error: String(err) });
-      });
-    });
+      } catch (err) {
+        console.error('createCalendarEvent error:', err);
+        sendResponse({ success: false, error: String(err && err.message || err) });
+      }
+    })();
     return true; // async
   }
 
@@ -89,36 +94,28 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
     const startTime = timeMin || new Date().toISOString();
 
-    chrome.identity.getAuthToken({ interactive: true }, token => {
-      if (chrome.runtime.lastError || !token) {
-        console.error('Token error:', chrome.runtime.lastError);
-        sendResponse({ success: false, error: chrome.runtime.lastError });
-        return;
-      }
-
-      const url = new URL('https://www.googleapis.com/calendar/v3/calendars/primary/events');
-      url.searchParams.set('singleEvents', 'true');
-      url.searchParams.set('orderBy', 'startTime');
-      url.searchParams.set('timeMin', startTime);
-      url.searchParams.set('maxResults', String(maxResults));
-
-      fetch(url.toString(), {
-        headers: { 'Authorization': `Bearer ${token}` }
-      })
-      .then(r => r.json().then(j => ({ ok: r.ok, status: r.status, json: j })))
-      .then(({ ok, status, json }) => {
+    (async () => {
+      try {
+        const token = await getAuthTokenInteractive();
+        const url = new URL('https://www.googleapis.com/calendar/v3/calendars/primary/events');
+        url.searchParams.set('singleEvents', 'true');
+        url.searchParams.set('orderBy', 'startTime');
+        url.searchParams.set('timeMin', startTime);
+        url.searchParams.set('maxResults', String(maxResults));
+        const { ok, status, json } = await fetchJson(url.toString(), {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
         if (!ok) {
           console.error('Calendar list error:', status, json);
           sendResponse({ success: false, status, error: json });
           return;
         }
         sendResponse({ success: true, events: Array.isArray(json.items) ? json.items : [] });
-      })
-      .catch(err => {
-        console.error('Network error:', err);
-        sendResponse({ success: false, error: String(err) });
-      });
-    });
+      } catch (err) {
+        console.error('listCalendarEvents error:', err);
+        sendResponse({ success: false, error: String(err && err.message || err) });
+      }
+    })();
     return true; // async
   }
 });
