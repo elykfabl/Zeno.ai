@@ -12,12 +12,14 @@ function byId(id) { return /** @type {HTMLElement} */(document.getElementById(id
 /** @param {string|number|Date} d */
 function fmtDate(d) {
   const dt = new Date(d);
-  if (Number.isNaN(dt.getTime())) return '—';
+  if (!(dt instanceof Date) || Number.isNaN(dt.getTime())) return '—';
   return dt.toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' });
 }
 /** simple HTML escape (bugfix: removed stray ';' from char class) */
+const HTML_ESCAPE_MAP = { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' };
+const HTML_ESCAPE_RE = /[&<>"]/g;
 function escapeHtml(str) {
-  return String(str).replace(/[&<>"]/g, s => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[s]));
+  return String(str).replace(HTML_ESCAPE_RE, s => HTML_ESCAPE_MAP[s]);
 }
 
 // No local storage list, composer, or login UI. OAuth will occur implicitly from background on API call.
@@ -83,6 +85,11 @@ function parseNaturalLanguageToEvent(input) {
 }
 
 // ---- Minimal local storage for test-mode events ----
+// Purpose: While we don't persist to Google Calendar yet, we keep a local
+// list of "events" so you can test the full chat flow end-to-end. This uses
+// chrome.storage.local inside the extension. If someone opens testOne.html
+// directly in a normal tab (no extension context), we transparently fall back
+// to window.localStorage so it still works for demos.
 const LOCAL_EVENTS_KEY = 'miniCal.localEvents';
 function loadLocalEvents() {
   return new Promise(resolve => {
@@ -166,6 +173,7 @@ byId('chatInput').addEventListener('keydown', (e) => {
 });
 
 // Fetch and display locally saved test events instead of Calendar API (concept test)
+// Open the dedicated Upcoming panel and render the local list
 byId('showEvents').addEventListener('click', async () => {
   // Toggle/open upcoming panel and render local events
   const panel = byId('upcomingPanel');
@@ -178,6 +186,12 @@ byId('closeUpcoming').addEventListener('click', () => {
   panel.classList.add('hidden');
 });
 
+/**
+ * renderUpcomingList
+ * Renders the locally saved test events (sorted by start) into the
+ * dedicated Upcoming panel. This mirrors a real "Upcoming" page but
+ * stays fully local for concept testing.
+ */
 async function renderUpcomingList() {
   const list = byId('upcomingList');
   list.innerHTML = '';
@@ -206,13 +220,53 @@ async function renderUpcomingList() {
     titleDiv.className = 'item-title';
     titleDiv.textContent = ev.title || 'Untitled';
     bodyDiv.appendChild(titleDiv);
+    const actions = document.createElement('div');
+    actions.className = 'item-actions';
+    const delBtn = document.createElement('button');
+    delBtn.className = 'icon-btn';
+    delBtn.dataset.action = 'delete-local';
+    delBtn.dataset.index = String(i);
+    delBtn.type = 'button';
+    delBtn.textContent = 'Delete';
+    actions.appendChild(delBtn);
     li.appendChild(timeDiv);
     li.appendChild(bodyDiv);
+    li.appendChild(actions);
     list.appendChild(li);
   }
 }
 
+// Handle delete clicks within the Upcoming list (event delegation)
+byId('upcomingList').addEventListener('click', async (e) => {
+  const btn = /** @type {HTMLElement|null} */(e.target && e.target.closest('button'));
+  if (!btn) return;
+  if (btn.dataset.action !== 'delete-local') return;
+  const idx = Number(btn.dataset.index);
+  if (!Number.isInteger(idx)) return;
+  const events = await loadLocalEvents();
+  if (idx < 0 || idx >= events.length) return;
+  events.splice(idx, 1);
+  await saveLocalEvents(events);
+  await renderUpcomingList();
+});
+
+// Clear all locally saved test events
+const clearBtn = document.getElementById('clearLocal');
+if (clearBtn) {
+  clearBtn.addEventListener('click', async () => {
+    if (!confirm('Clear all local test events?')) return;
+    await saveLocalEvents([]);
+    await renderUpcomingList();
+  });
+}
+
 // ---- Conversational state machine (local-only test) ----
+// How it works (high-level):
+// 1) We try to parse the initial user message for time/title.
+// 2) If something is missing, we set a "step" and ask a follow-up.
+// 3) Each subsequent message is routed based on the current step until we
+//    have all fields (title, when, optional attendees).
+// 4) We show a confirmation summary and save locally on confirmation.
 let convo = null; // { step: string, draft: {title,startISO,endISO,attendees[]} }
 function resetConvo() { convo = null; }
 
@@ -239,8 +293,8 @@ async function handleChatTurn(text) {
       convo.step = d.startISO ? 'askAttendees' : 'askWhen';
       if (convo.step === 'askWhen') appendChat('Assistant', 'When is it? (e.g., “tomorrow 4pm”)');
       else appendChat('Assistant', 'Anyone to invite? (paste emails or say “no”)');
-      return;
-    }
+    return;
+  }
     if (step === 'askWhen') {
       const r = parseNaturalLanguageToEvent(text);
       if (!r.startISO) { appendChat('Assistant', 'I could not parse a time. Try “tomorrow 4pm”.'); return; }
