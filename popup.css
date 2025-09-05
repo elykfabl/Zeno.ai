@@ -59,9 +59,17 @@
   padding: 0;
 }
 
+/* Debug: Ensure visibility */
+body {
+  min-width: 400px !important;
+  min-height: 600px !important;
+}
+
 html, body {
   height: 100%;
   overflow: hidden;
+  margin: 0;
+  padding: 0;
 }
 
 body {
@@ -71,6 +79,7 @@ body {
   color: var(--text-primary);
   background: var(--bg-primary);
   width: 400px;
+  height: 600px;
   border-radius: 12px;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -80,8 +89,8 @@ body {
 .app {
   display: flex;
   flex-direction: column;
-  height: 100vh;
-  max-height: 600px;
+  height: 100%;
+  width: 100%;
   background: var(--bg-primary);
   border-radius: 12px;
   overflow: hidden;
