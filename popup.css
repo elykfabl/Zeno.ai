@@ -59,17 +59,9 @@
   padding: 0;
 }
 
-/* Debug: Ensure visibility */
-body {
-  min-width: 400px !important;
-  min-height: 600px !important;
-}
-
 html, body {
   height: 100%;
   overflow: hidden;
-  margin: 0;
-  padding: 0;
 }
 
 body {
@@ -79,7 +71,8 @@ body {
   color: var(--text-primary);
   background: var(--bg-primary);
   width: 400px;
-  height: 600px;
+  height: 600px; /* Set explicit height */
+  min-height: 600px; /* Ensure minimum height */
   border-radius: 12px;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -89,8 +82,8 @@ body {
 .app {
   display: flex;
   flex-direction: column;
-  height: 100%;
-  width: 100%;
+  height: 100vh;
+  min-height: 600px; /* Match body height */
   background: var(--bg-primary);
   border-radius: 12px;
   overflow: hidden;
@@ -106,6 +99,7 @@ body {
   background: var(--bg-elevated);
   border-bottom: 1px solid var(--border-light);
   backdrop-filter: blur(8px);
+  flex-shrink: 0; /* Prevent header from shrinking */
 }
 
 .brand {
@@ -186,6 +180,7 @@ body {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  min-height: 0; /* Allow flex child to shrink */
 }
 
 .chat-container {
@@ -193,6 +188,7 @@ body {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  min-height: 0; /* Allow flex child to shrink */
 }
 
 /* Chat Log */
@@ -203,6 +199,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: var(--space-lg);
+  min-height: 0; /* Allow flex child to shrink */
 }
 
 .chat-log::-webkit-scrollbar {
@@ -310,6 +307,7 @@ body {
   padding: var(--space-lg) var(--space-xl);
   background: var(--bg-elevated);
   border-top: 1px solid var(--border-light);
+  flex-shrink: 0; /* Prevent input from shrinking */
 }
 
 .input-wrapper {
@@ -338,7 +336,7 @@ body {
   resize: none;
   outline: none;
   min-height: 20px;
-  max-height: 120px;
+  max-height: 80px; /* Reduced max height for popup */
   padding: var(--space-sm);
 }
 
@@ -396,6 +394,7 @@ body {
   justify-content: space-between;
   padding: var(--space-lg) var(--space-xl);
   border-bottom: 1px solid var(--border-light);
+  flex-shrink: 0;
 }
 
 .panel-header h2 {
@@ -414,6 +413,7 @@ body {
   flex: 1;
   padding: var(--space-lg) var(--space-xl);
   overflow-y: auto;
+  min-height: 0;
 }
 
 .events-list::-webkit-scrollbar {
@@ -492,6 +492,7 @@ body {
   padding: var(--space-md) var(--space-xl);
   background: var(--bg-tertiary);
   border-top: 1px solid var(--border-light);
+  flex-shrink: 0; /* Prevent footer from shrinking */
 }
 
 .footer p {
@@ -519,14 +520,16 @@ body {
 }
 
 /* Responsive Adjustments */
-@media (max-width: 420px) {
+@media (max-width: 500px) {
   body {
     width: 100vw;
+    min-width: 100vw;
     border-radius: 0;
   }
   
   .app {
     border-radius: 0;
+    min-width: 100vw;
   }
 }
 
