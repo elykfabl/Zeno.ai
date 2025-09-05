@@ -121,15 +121,26 @@ function saveLocalEvents(events) {
 }
 
 function appendChat(role, content) {
-  // Render ChatGPT-like bubbles
+  // Render modern chat bubbles with smooth animation
   const log = byId('chatLog');
-  const row = document.createElement('div');
-  row.className = `msg ${role.toLowerCase() === 'you' ? 'user' : 'assistant'}`;
+  const message = document.createElement('div');
+  message.className = `message ${role.toLowerCase() === 'you' ? 'user' : 'assistant'}`;
+  message.style.opacity = '0';
+  message.style.transform = 'translateY(10px)';
+  
   const bubble = document.createElement('div');
-  bubble.className = 'bubble';
+  bubble.className = 'message-bubble';
   bubble.textContent = content;
-  row.appendChild(bubble);
-  log.appendChild(row);
+  message.appendChild(bubble);
+  log.appendChild(message);
+  
+  // Animate in
+  requestAnimationFrame(() => {
+    message.style.transition = 'all 0.3s ease-out';
+    message.style.opacity = '1';
+    message.style.transform = 'translateY(0)';
+  });
+  
   log.scrollTop = log.scrollHeight;
 }
 
@@ -144,45 +155,83 @@ function setTyping(visible) {
   t.classList.toggle('hidden', !visible);
 }
 
-byId('chatSend').addEventListener('click', async () => {
-  // 1) Read user message  2) Parse it  3) Ask for title if missing
-  // 4) In test-mode, collect missing fields and save locally  5) Show result
-  const inputEl = byId('chatInput');
+// Enhanced chat input handling with auto-resize and better UX
+const inputEl = byId('chatInput');
+const sendBtn = byId('chatSend');
+
+// Auto-resize textarea
+function autoResize(textarea) {
+  textarea.style.height = 'auto';
+  textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
+}
+
+inputEl.addEventListener('input', () => {
+  autoResize(inputEl);
+});
+
+// Enhanced keyboard handling
+inputEl.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendBtn.click();
+  }
+});
+
+// Send button click handler
+sendBtn.addEventListener('click', async () => {
   const text = inputEl.value.trim();
   if (!text) return;
 
   appendChat('You', text);
   setBusy(true);
   setTyping(true);
+  
+  // Clear input immediately for better UX
+  inputEl.value = '';
+  autoResize(inputEl);
+  
   try {
     await handleChatTurn(text);
   } finally {
     setBusy(false);
     setTyping(false);
-    inputEl.value = '';
   }
 });
 
-// Enter to send, Shift+Enter for newline
-byId('chatInput').addEventListener('keydown', (e) => {
-  if (e.key === 'Enter' && !e.shiftKey) {
-    e.preventDefault();
-    byId('chatSend').click();
-  }
-});
+// Focus input on load
+inputEl.focus();
 
 // Fetch and display locally saved test events instead of Calendar API (concept test)
 // Open the dedicated Upcoming panel and render the local list
 byId('showEvents').addEventListener('click', async () => {
-  // Toggle/open upcoming panel and render local events
+  // Toggle/open upcoming panel with smooth animation
   const panel = byId('upcomingPanel');
   panel.classList.remove('hidden');
+  panel.style.opacity = '0';
+  panel.style.transform = 'translateX(100%)';
+  
   await renderUpcomingList();
+  
+  // Animate in
+  requestAnimationFrame(() => {
+    panel.style.transition = 'all 0.3s ease-out';
+    panel.style.opacity = '1';
+    panel.style.transform = 'translateX(0)';
+  });
 });
 
 byId('closeUpcoming').addEventListener('click', () => {
   const panel = byId('upcomingPanel');
-  panel.classList.add('hidden');
+  panel.style.transition = 'all 0.3s ease-out';
+  panel.style.opacity = '0';
+  panel.style.transform = 'translateX(100%)';
+  
+  setTimeout(() => {
+    panel.classList.add('hidden');
+    panel.style.transition = '';
+    panel.style.opacity = '';
+    panel.style.transform = '';
+  }, 300);
 });
 
 /**
@@ -196,10 +245,13 @@ async function renderUpcomingList() {
   list.innerHTML = '';
   const events = await loadLocalEvents();
   if (!events.length) {
-    const li = document.createElement('li');
-    li.className = 'item';
-    li.textContent = 'No locally saved test events yet.';
-    list.appendChild(li);
+    const emptyState = document.createElement('div');
+    emptyState.className = 'event-item';
+    emptyState.style.textAlign = 'center';
+    emptyState.style.color = 'var(--text-tertiary)';
+    emptyState.style.fontStyle = 'italic';
+    emptyState.textContent = 'No events scheduled yet.';
+    list.appendChild(emptyState);
     return;
   }
   const sorted = [...events].sort((a,b) => {
@@ -209,29 +261,31 @@ async function renderUpcomingList() {
   });
   for (let i = 0; i < sorted.length; i++) {
     const ev = sorted[i];
-    const li = document.createElement('li');
-    li.className = 'item';
+    const item = document.createElement('div');
+    item.className = 'event-item';
+
     const timeDiv = document.createElement('div');
-    timeDiv.className = 'item-time';
+    timeDiv.className = 'event-time';
     timeDiv.textContent = ev.start ? fmtDate(ev.start) : '—';
-    const bodyDiv = document.createElement('div');
+
     const titleDiv = document.createElement('div');
-    titleDiv.className = 'item-title';
+    titleDiv.className = 'event-title';
     titleDiv.textContent = ev.title || 'Untitled';
-    bodyDiv.appendChild(titleDiv);
+
     const actions = document.createElement('div');
-    actions.className = 'item-actions';
+    actions.className = 'event-actions';
     const delBtn = document.createElement('button');
-    delBtn.className = 'icon-btn';
     delBtn.dataset.action = 'delete-local';
     delBtn.dataset.index = String(i);
     delBtn.type = 'button';
-    delBtn.textContent = 'Delete';
+    delBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    delBtn.setAttribute('aria-label', 'Delete event');
     actions.appendChild(delBtn);
-    li.appendChild(timeDiv);
-    li.appendChild(bodyDiv);
-    li.appendChild(actions);
-    list.appendChild(li);
+
+    item.appendChild(timeDiv);
+    item.appendChild(titleDiv);
+    item.appendChild(actions);
+    list.appendChild(item);
   }
 }
 
