@@ -40,6 +40,7 @@ function escapeHtml(str) {
  * from a natural-language instruction like "Set calendar for 4:00 AM tomorrow".
  * This is a lightweight deterministic stub; later we can swap in a real LLM call.
  */
+
 function parseNaturalLanguageToEvent(input) {
   const text = String(input || '').trim();
   if (!text) return { error: 'Empty message' };
