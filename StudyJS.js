@@ -43,6 +43,22 @@ function escapeHtml(str) {
  * This is a lightweight deterministic stub; later we can swap in a real LLM call.
  */
 
+// --- Google Sign-In ---
+const loginBtn = document.getElementById('loginBtn');
+const statusEl = document.getElementById('status');
+
+loginBtn.addEventListener('click', () => {
+  chrome.runtime.sendMessage({ action: 'login' }, response => {
+    if (!response || !response.success) {
+      alert('Login failed. Check console for details.');
+      return;
+    }
+    statusEl.textContent = 'Signed in ✅';
+    statusEl.style.color = '#22c55e';
+    console.log('Access Token:', response.token);
+  });
+});
+
 function parseNaturalLanguageToEvent(input) {
   const text = String(input || '').trim();
   if (!text) return { error: 'Empty message' };
