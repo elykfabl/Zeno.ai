@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 {
   "manifest_version": 3,
   "name": "Mini Calendar Assistant",
@@ -19,29 +18,4 @@
     "default_popup": "testOne.html",
     "default_title": "Mini Cal"
   }
-=======
-{
-  "manifest_version": 3,
-  "name": "Mini Calendar Assistant",
-  "version": "0.2.0",
-  "description": "Chatbox popup with Google Sign-In (Phase 2).",
-  "permissions": ["identity", "storage"],
-  "host_permissions": [
-    "https://www.googleapis.com/*"
-  ],
-  "oauth2": {
-    "client_id": "304220756028-rp06c4n1hptehivid9vr1hdgtq994bk1.apps.googleusercontent.com",
-    "scopes": [
-      "https://www.googleapis.com/auth/calendar.events.readonly",
-      "https://www.googleapis.com/auth/calendar.events"
-    ]
-  },
-  "background": {
-    "service_worker": "background.js"
-  },
-  "action": {
-    "default_popup": "testOne.html",
-    "default_title": "Mini Cal"
-  }
->>>>>>> 05f2a2dff7458054d31ea18e3dccab0fabf7a274
 }
