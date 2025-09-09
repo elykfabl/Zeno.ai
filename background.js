@@ -39,7 +39,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'login') {
     chrome.identity.getAuthToken({ interactive: true }, token => {
       if (chrome.runtime.lastError || !token) {
-       ` console.error('Login failed:', chrome.runtime.lastError);`
+        console.error('Login failed:', chrome.runtime.lastError);
         sendResponse({ success: false, error: chrome.runtime.lastError });
         return;
       }
