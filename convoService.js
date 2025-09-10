@@ -8,7 +8,10 @@ export function resetConvo() { convo = null; }
 
 function startConvoFromText(text) {
   const parsed = parseNaturalLanguageToEvent(text);
-  if (parsed.error) { appendChat('Assistant', parsed.error); return null; }
+if (parsed.error) {
+  appendChat('Assistant', "😕 I couldn’t figure out the date/time. Try something like ‘meeting tomorrow at 2pm’.");
+  return null;
+}
   const draft = { title: parsed.title, startISO: parsed.startISO, endISO: parsed.endISO, attendees: [] };
   if (!draft.title || draft.title === 'New event') return { step: 'askTitle', draft };
   if (!draft.startISO) return { step: 'askWhen', draft };

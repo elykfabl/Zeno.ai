@@ -22,7 +22,10 @@ inputEl.addEventListener('keydown', (e) => {
 // send button
 sendBtn.addEventListener('click', async () => {
   const text = inputEl.value.trim();
-  if (!text) return;
+  if (!text) {
+    appendChat('Assistant', "⚠️ Please type something for me to schedule 🙂");
+    return;
+  }
 
   appendChat('You', text);
   setBusy(true);
