@@ -70,9 +70,9 @@ body {
   line-height: 1.5;
   color: var(--text-primary);
   background: var(--bg-primary);
-  width: 360px; /* shrunk */
-  height: 500px; /* shrunk */
-  min-height: 500px;
+  width: 300px; /* shrunk */
+  height: 420px; /* shrunk */
+  min-height: 420px;
   border-radius: 12px;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -83,7 +83,7 @@ body {
   display: flex;
   flex-direction: column;
   height: 100vh;
-  min-height: 500px; /* shrunk */
+  min-height: 420px; /* shrunk */
   background: var(--bg-primary);
   border-radius: 12px;
   overflow: hidden;
