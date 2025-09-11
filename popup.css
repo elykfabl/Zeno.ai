@@ -429,17 +429,17 @@ body {
   border-radius: 2px;
 }
 
-/* Event Items */
+/* Event Items - Fixed Row Layout */
 .event-item {
   display: flex;
-  align-items: flex-start;
-  gap: var(--space-md);
-  padding: var(--space-lg);
+  align-items: center; /* everything in one line */
+  padding: var(--space-md) var(--space-lg);
   background: var(--bg-secondary);
   border: 1px solid var(--border-light);
   border-radius: var(--radius-lg);
   margin-bottom: var(--space-sm);
   transition: all var(--transition-fast);
+  gap: var(--space-md);
 }
 
 .event-item:hover {
@@ -451,21 +451,26 @@ body {
   font-size: var(--font-size-xs);
   color: var(--text-secondary);
   font-weight: 500;
-  min-width: 80px;
+  min-width: 90px; /* lock width */
   flex-shrink: 0;
 }
 
 .event-title {
-  flex: 1;
+  flex: 1; /* take up remaining middle space */
   font-weight: 500;
   color: var(--text-primary);
   line-height: 1.4;
+  white-space: nowrap; 
+  overflow: hidden;
+  text-overflow: ellipsis; /* prevent long text from pushing buttons */
 }
 
 .event-actions {
   display: flex;
-  gap: var(--space-xs);
-  margin-left: var(--space-sm);
+  align-items: center;
+  gap: var(--space-sm);
+  flex-shrink: 0;
+  margin-left: auto; /* pushes buttons to far right */
 }
 
 .event-actions button {
@@ -486,6 +491,7 @@ body {
   background: var(--accent-danger);
   color: var(--text-inverse);
 }
+
 
 /* --- Edit Mode for Events --- */
 .event-edit {
