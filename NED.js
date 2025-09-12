@@ -1,4 +1,4 @@
-// main.js
+// NED(Navigate, Edit, Delete).js
 'use strict';
 
 import { byId, appendChat, setBusy, setTyping, fmtDate } from './uiService.js';
